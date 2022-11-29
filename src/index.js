@@ -144,9 +144,9 @@ function getBoard(boardIdentifier, apiKey, token) {
   const url = 'https://api.trello.com/1/members/me/boards'
     + '?fields=id,name,shortLink'
     + `&key=${encodeURIComponent(apiKey)}`
-    + `&token=${encodeURIComponent(token)}`
+    + `&token=${encodeURIComponent(token)}`;
 
-  console.log(`Getting board with id=${boardIdentifier} from ${url}`)
+  console.log(`Getting board with id=${boardIdentifier} from ${url}`);
 
   if (boardIdentifier) {
     return axios.get(url)
