@@ -36,9 +36,9 @@ try {
             }
           });
       }));
-    })
+  })
     .catch(err => {
-      core.setFailed(err && err.message);
+      core.setFailed(err && err.trace);
     });
 
 } catch (error) {
@@ -49,7 +49,7 @@ function getMarkerRegex(marker) {
   console.log(`marker set as '${marker}'`);
   if (/^[a-zA-Z]+-$/g.test(marker)) {
     marker = `\\b${marker}`; // must be own word
-  }else if (/^[a-zA-Z]+$/g.test(marker)) {
+  } else if (/^[a-zA-Z]+$/g.test(marker)) {
     marker = `\\b${marker}`; // must be own word
   } else if (marker.length !== 1) {
     throw new Error(' special character marker must be a single character');
@@ -141,19 +141,23 @@ function handleMatches(matches, markerLength, getUrlFn, getTitleFn) {
 }
 
 function getBoard(boardIdentifier, apiKey, token) {
-  if (boardIdentifier) {
-    return axios.get('https://api.trello.com/1/members/me/boards'
+  const url = 'https://api.trello.com/1/members/me/boards'
     + '?fields=id,name,shortLink'
     + `&key=${encodeURIComponent(apiKey)}`
-    + `&token=${encodeURIComponent(token)}`)
-    .then(resp => {
-      const json = resp && resp.data;
-      return json && json
-        .filter(b => b.name === boardIdentifier || b.shortLink === boardIdentifier || b.id === boardIdentifier)
-        .map(b => {
-          return {boardId: b.id, boardName: b.name};
-        })[0];
-    });
+    + `&token=${encodeURIComponent(token)}`
+
+  console.log(`Getting board with id=${boardIdentifier} from ${url}`)
+
+  if (boardIdentifier) {
+    return axios.get(url)
+      .then(resp => {
+        const json = resp && resp.data;
+        return json && json
+          .filter(b => b.name === boardIdentifier || b.shortLink === boardIdentifier || b.id === boardIdentifier)
+          .map(b => {
+            return { boardId: b.id, boardName: b.name };
+          })[0];
+      });
   }
   return Promise.resolve(null);
 }
@@ -163,22 +167,22 @@ function getCard(cardIdentifier, board, apiKey, token) {
   return axios.get(`https://api.trello.com/1/boards/${encodeURIComponent(board.boardId)}/cards/${encodeURIComponent(cardIdentifier)}`
     + `?key=${encodeURIComponent(apiKey)}`
     + `&token=${encodeURIComponent(token)}`)
-  .then(resp => {
-    const json = resp && resp.data;
+    .then(resp => {
+      const json = resp && resp.data;
 
-    return { cardId: json.id, cardName: json.name, cardNumber: json.idShort };
-  })
-  .catch(err => {
-    console.log(`Did not find card '${cardIdentifier}' on board '${board.boardName}'`, err);
-  });
+      return { cardId: json.id, cardName: json.name, cardNumber: json.idShort };
+    })
+    .catch(err => {
+      console.log(`Did not find card '${cardIdentifier}' on board '${board.boardName}'`, err);
+    });
 }
 
 function attachUrl(cardDetails, url, title, apiKey, token) {
   return axios.post(`https://api.trello.com/1/cards/${encodeURIComponent(cardDetails.cardId)}/attachments`
-      + `?name=${encodeURIComponent(title)}`
-      + `&url=${encodeURIComponent(url)}`
-      + `&key=${encodeURIComponent(apiKey)}`
-      + `&token=${encodeURIComponent(token)}`)
+    + `?name=${encodeURIComponent(title)}`
+    + `&url=${encodeURIComponent(url)}`
+    + `&key=${encodeURIComponent(apiKey)}`
+    + `&token=${encodeURIComponent(token)}`)
     .then(() => {
       console.log(`attached '${title}' (${url}) to card '${cardDetails.cardName}' (${cardDetails.cardNumber})`);
     });
